@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+    <http:listener-config name="customer-management-experience-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="customer-management-experience-api-config" api="resource::3ae899d1-13e0-459a-9ca9-a07064774f5d:customer-management-experience-api:1.0.0:raml:zip:customer-management-experience-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <configuration-properties doc:name="Configuration properties" doc:id="ca606993-74a3-4481-9ba4-25eab28cd807" file="app.properties" />
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="19eb19f4-f3b0-48a5-b857-9a949707e0fe" >
+		<http:request-connection host="${address.standardization.host}" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration1" doc:name="HTTP Request configuration" doc:id="80cae0f2-51ff-4b27-b55c-d20b30505ad3" >
+		<http:request-connection host="${customer.profile.host}" />
+	</http:request-config>
+	<json-logger:config name="JSON_Logger_Config" doc:name="JSON Logger Config" doc:id="2b7dd90c-6049-4d8b-a7b9-ba7188d655fd" operationName="${json.logger.application.OpName}" operationType="${json.logger.application.OpType}" operationVersion="${json.logger.application.version}" serviceContext="${json.logger.application.serviceContext}" />
+	<api-gateway:autodiscovery apiId="16820605" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="864f6df7-2a95-4c82-984b-78648eb0408a" flowRef="customer-management-experience-api-main" />
+	<flow name="customer-management-experience-api-main">
+        <http:listener config-ref="customer-management-experience-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="customer-management-experience-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="customer-management-experience-api-console">
+        <http:listener config-ref="customer-management-experience-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="customer-management-experience-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\customer\profile:application\json:customer-management-experience-api-config">
+		<json-logger:logger doc:name="Logger" doc:id="c53d5b7f-2377-41c7-b557-01b752462adb" config-ref="JSON_Logger_Config" message="Start log" sender='#["Customer1"]'>
+			<json-logger:content ><![CDATA[#[payload]]]></json-logger:content>
+		</json-logger:logger>
+		<try doc:name="Try" doc:id="9124931b-61fc-4daa-b3c2-d00f70021b27" >
+			<ee:transform doc:name="Address Standardization Request" doc:id="1f097262-68f3-408d-9299-b49dd1a53a8e">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="addStandReq"><![CDATA[%dw 2.0
+output application/json
+---
+{
+  AddressLine1: payload.address.AddressLine1,
+  City: payload.address.City,
+  Country: payload.address.Country,
+  PostalCode: payload.address.PostalCode
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+			<json-logger:logger doc:name="Address Standardization" doc:id="f340f75e-2056-447a-a335-662ddc642633" config-ref="JSON_Logger_Config" message="logging before Address Standardization call" sender='#["Customer1"]' tracePoint="BEFORE_REQUEST">
+			<json-logger:content><![CDATA[#[payload]]]></json-logger:content>
+		</json-logger:logger>
+			<http:request method="POST" doc:name="Address Standardization call" doc:id="9fd94454-ec7b-4347-91e1-bcdbe97ef945" path="${address.standardization.path}" config-ref="HTTP_Request_configuration" outputMimeType="application/json" target="addStandRes">
+			<http:body><![CDATA[#[vars.addStandReq]]]></http:body>
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"client_secret" : p('address.standardization.headers.client_secret'),
+	"client_id" : p('address.standardization.headers.client_id')
+}]]]></http:headers>
+		</http:request>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f8770709-df23-4517-a4c6-bad07ce66fd7" type="ANY">
+					<ee:transform doc:name="Address Standardization Failure" doc:id="339c2364-ce29-4e15-90a3-3425626d1f20" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Address Standardization call failed"}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="httpStatus" ><![CDATA[404]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<try doc:name="Try" doc:id="5df0ce15-6b64-4245-9087-50f4ff4021b7" >
+			<ee:transform doc:name="Customer Profile Request" doc:id="072e7662-3714-4d8d-83e2-9c726c7cb399">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="customerReq"><![CDATA[%dw 2.0
+output application/json
+fun formatDate(date) = date as Date {
+	format:"yyyy-MM-dd"
+}
+---
+{
+	"legal_name": payload.legal_name,
+	"mobile_phone_number": payload.mobile_phone_number,
+	"email": payload.email,
+	"face_image": payload.face_image,
+	"date_of_birth": formatDate(payload.date_of_birth),
+	"relationship_status": payload.relationship_status,
+	"dependants": payload.dependants,
+	"dob_of_dependants": payload.dob_of_dependants,
+	"credit_rating": payload.credit_rating,
+	"credit_limit": payload.credit_limit,
+	"highest_education_attained": payload.highest_education_attained,
+	"employment_status": payload.employment_status,
+	"kyc_status": payload.kyc_status,
+	"last_ok_date": payload.last_ok_date,
+	"title": payload.title,
+	"branch_id": payload.branch_id,
+	"name_suffix": payload.name_suffix,
+	"name_prefix": payload.name_prefix,
+	"address": vars.addStandRes
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+			<json-logger:logger doc:name="Customer Profile call" doc:id="fe8b05bc-f093-4688-9e95-a365fe56b3f5" config-ref="JSON_Logger_Config" message="logging before customer Profile call" sender='#["Customer1"]' tracePoint="BEFORE_REQUEST">
+				<json-logger:content><![CDATA[#[payload]]]></json-logger:content>
+			</json-logger:logger>
+			<http:request method="POST" doc:name="Insert Customer Profile call" doc:id="fdae0439-6fca-4fe5-8da7-956fdca64bd5" config-ref="HTTP_Request_configuration1" path="${customer.profile.path}" />
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate-customer" doc:id="7914df67-5a9e-45d8-a413-cf013fbaf404" type="ANY" >
+					<ee:transform doc:name="Customer Profile call" doc:id="28f06201-623a-4ee1-b272-2ea2ccea989f" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{message: "unable to insert data to customer DB"}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Transform Message" doc:id="0a17c30d-893f-4975-91f0-5cc723e1b4e5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":"customer added successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="log end" doc:id="719da0b7-255b-4b0c-9aa2-056ec93088d5" config-ref="JSON_Logger_Config" message="log end" sender='#["Customer1"]' tracePoint="END">
+				<json-logger:content><![CDATA[#[payload]]]></json-logger:content>
+			</json-logger:logger>
+    </flow>
+</mule>

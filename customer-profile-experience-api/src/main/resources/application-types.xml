@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="customerReq" format="json">
+      <types:shape format="weave" example="examples/customerRequest.json"><![CDATA[%dw 2.0
+
+type customerReq = {|
+  legal_name: String, 
+  mobile_phone_number: String, 
+  email: String, 
+  face_image: {|
+    url: String, 
+    date: String
+  |}, 
+  date_of_birth: String, 
+  relationship_status: String, 
+  dependants: Number {"typeId": "int"}, 
+  dob_of_dependants: Array<String>, 
+  credit_rating: {|
+    rating: String, 
+    source: String
+  |}, 
+  credit_limit: {|
+    currency: String, 
+    amount: String
+  |}, 
+  highest_education_attained: String, 
+  employment_status: String, 
+  kyc_status: Boolean, 
+  last_ok_date: String, 
+  title: String, 
+  branch_id: String, 
+  name_suffix: String, 
+  name_prefix: String, 
+  address: {|
+    AddressLine1: String, 
+    City: String, 
+    Country: String, 
+    PostalCode: String
+  |}
+|} {"example": "{\\\"legal_name\\\":\\\"Eveline Tripman\\\",\\\"mobile_phone_number\\\":\\\"+44 07972 444 876\\\",\\\"email\\\":\\\"felixsmith@example.com\\\",\\\"face_image\\\":{\\\"url\\\":\\\"www.openbankproject.com\\\",\\\"date\\\":\\\"2017-09-19T00:00:00Z\\\"},\\\"date_of_birth\\\":\\\"2017-09-19T00:00:00Z\\\",\\\"relationship_status\\\":\\\"single\\\",\\\"dependants\\\":1,\\\"dob_of_dependants\\\":[\\\"2017-09-19T00:00:00Z\\\"],\\\"credit_rating\\\":{\\\"rating\\\":\\\"OBP\\\",\\\"source\\\":\\\"OBP\\\"},\\\"credit_limit\\\":{\\\"currency\\\":\\\"USD\\\",\\\"amount\\\":\\\"0\\\"},\\\"highest_education_attained\\\":\\\"Master\\\",\\\"employment_status\\\":\\\"Worker\\\",\\\"kyc_status\\\":true,\\\"last_ok_date\\\":\\\"2017-09-19T00:00:00Z\\\",\\\"title\\\":\\\"Dr.\\\",\\\"branch_id\\\":\\\"DERBY6\\\",\\\"name_suffix\\\":\\\"Sr\\\",\\\"name_prefix\\\":\\\"Dr\\\",\\\"address\\\":{\\\"AddressLine1\\\":\\\"11 High Street\\\",\\\"City\\\":\\\"AnyCity\\\",\\\"Country\\\":\\\"AnyCountry\\\",\\\"PostalCode\\\":\\\"55555\\\"}}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#1f097262-68f3-408d-9299-b49dd1a53a8e"/>
+  <types:enrichment select="#072e7662-3714-4d8d-83e2-9c726c7cb399">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="customerReq" type="customerReq"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
